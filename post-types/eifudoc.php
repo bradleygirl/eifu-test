@@ -123,3 +123,58 @@ function eifu_test_bulk_updated_messages( $bulk_messages, $bulk_counts ) {
 }
 
 add_filter( 'bulk_post_updated_messages', 'eifu_test_bulk_updated_messages', 10, 2 );
+
+/**
+ * Add custom meta boxes for documents
+ */
+function add_document_meta_boxes() {
+	add_meta_box(
+		'document_details',
+		__('Document Details', 'eifu-test'),
+		'render_document_details_meta_box',
+		'eifudoc',
+		'normal',
+		'default'
+	);
+}
+add_action('add_meta_boxes', 'add_document_meta_boxes');
+
+/**
+ * Render document details meta box
+ */
+function render_document_details_meta_box($post) {
+	wp_nonce_field('save_document_details', 'document_details_nonce');
+	
+	$file_url = get_post_meta($post->ID, '_document_file_url', true);
+	$file_size = get_post_meta($post->ID, '_document_file_size', true);
+	$download_count = get_post_meta($post->ID, '_document_download_count', true);
+	
+	echo '<table class="form-table">';
+	echo '<tr><th><label for="document_file_url">' . __('Document File URL', 'eifu-test') . '</label></th>';
+	echo '<td><input type="url" id="document_file_url" name="document_file_url" value="' . esc_url($file_url) . '" class="regular-text" /></td></tr>';
+	
+	echo '<tr><th><label for="document_file_size">' . __('File Size', 'eifu-test') . '</label></th>';
+	echo '<td><input type="text" id="document_file_size" name="document_file_size" value="' . esc_attr($file_size) . '" class="regular-text" /></td></tr>';
+	
+	echo '<tr><th>' . __('Download Count', 'eifu-test') . '</th>';
+	echo '<td>' . intval($download_count) . '</td></tr>';
+	echo '</table>';
+}
+
+/**
+ * Save document details meta
+ */
+function save_document_details_meta($post_id) {
+	if (!isset($_POST['document_details_nonce']) || 
+		!wp_verify_nonce($_POST['document_details_nonce'], 'save_document_details')) {
+		return;
+	}
+	
+	if (defined('DOING_AUTOSAVE') && DOING_AUTOSAVE) {
+		return;
+	}
+	
+	update_post_meta($post_id, '_document_file_url', sanitize_url($_POST['document_file_url']));
+	update_post_meta($post_id, '_document_file_size', sanitize_text_field($_POST['document_file_size']));
+}
+add_action('save_post', 'save_document_details_meta');

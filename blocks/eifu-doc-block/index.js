@@ -14,6 +14,10 @@
 	 * @see https://wordpress.org/gutenberg/handbook/designers-developers/developers/packages/packages-i18n/
 	 */
 	var __ = wp.i18n.__;
+	var SelectControl = wp.components.SelectControl;
+	var CheckboxControl = wp.components.CheckboxControl;
+	var InspectorControls = wp.blockEditor.InspectorControls;
+	var useSelect = wp.data.useSelect;
 
 	/**
 	 * Every block starts by registering a new block type definition.
@@ -71,6 +75,118 @@
 			);
 		}
 	} );
+
+	registerBlockType('eifu-test/product-documents', {
+		title: __('Product Documents', 'eifu-test'),
+		category: 'woocommerce',
+		icon: 'media-document',
+		supports: {
+			html: false,
+		},
+		attributes: {
+			productId: {
+				type: 'number',
+				default: 0
+			},
+			showThumbnails: {
+				type: 'boolean',
+				default: true
+			},
+			layout: {
+				type: 'string',
+				default: 'list'
+			}
+		},
+
+		edit: function(props) {
+			var attributes = props.attributes;
+			var setAttributes = props.setAttributes;
+
+			// Get products for selection
+			var products = useSelect(function(select) {
+				return select('core').getEntityRecords('postType', 'product', {
+					per_page: -1,
+					status: 'publish'
+				});
+			}, []);
+
+			var productOptions = products ? products.map(function(product) {
+				return {
+					label: product.title.rendered,
+					value: product.id
+				};
+			}) : [];
+
+			productOptions.unshift({
+				label: __('Select a product...', 'eifu-test'),
+				value: 0
+			});
+
+			return el('div', {
+				className: props.className
+			}, [
+				el(InspectorControls, {},
+					el('div', { style: { padding: '16px' } }, [
+						el(SelectControl, {
+							label: __('Select Product', 'eifu-test'),
+							value: attributes.productId,
+							options: productOptions,
+							onChange: function(value) {
+								setAttributes({ productId: parseInt(value) });
+							}
+						}),
+						el(CheckboxControl, {
+							label: __('Show Thumbnails', 'eifu-test'),
+							checked: attributes.showThumbnails,
+							onChange: function(value) {
+								setAttributes({ showThumbnails: value });
+							}
+						}),
+						el(SelectControl, {
+							label: __('Layout', 'eifu-test'),
+							value: attributes.layout,
+							options: [
+								{ label: __('List', 'eifu-test'), value: 'list' },
+								{ label: __('Grid', 'eifu-test'), value: 'grid' },
+								{ label: __('Cards', 'eifu-test'), value: 'cards' }
+							],
+							onChange: function(value) {
+								setAttributes({ layout: value });
+							}
+						})
+					])
+				),
+				el('div', {
+					className: 'eifu-product-documents-preview'
+				}, 
+					attributes.productId > 0 
+						? __('Product Documents for Product ID: ', 'eifu-test') + attributes.productId
+						: __('Select a product to display its documents', 'eifu-test')
+				)
+			]);
+		},
+
+		save: function(props) {
+			return null; // Render via PHP
+		}
+	});
+
+	// Document Categories Block
+	registerBlockType('eifu-test/document-categories', {
+		title: __('Document Categories', 'eifu-test'),
+		category: 'widgets',
+		icon: 'category',
+		
+		edit: function(props) {
+			return el('div', {
+				className: props.className
+			}, __('Document Categories will be displayed here', 'eifu-test'));
+		},
+
+		save: function() {
+			return null; // Render via PHP
+		}
+	});
 } )(
 	window.wp
 );

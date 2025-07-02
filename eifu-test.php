@@ -40,3 +40,23 @@ add_action('before_woocommerce_init', function () {
         \Automattic\WooCommerce\Utilities\FeaturesUtil::declare_compatibility('custom_order_tables', __FILE__, true);
     }
 });
+
+/**
+ * Check if WooCommerce is active and load dependent files
+ */
+function eifu_test_maybe_load_woocommerce_features() {
+    if (!class_exists('WooCommerce')) {
+        add_action('admin_notices', function() {
+            echo '<div class="notice notice-error"><p>';
+            echo __('EIFU Product Documents requires WooCommerce to be installed and active.', 'eifu-test');
+            echo '</p></div>';
+        });
+        return;
+    }
+    // Load additional WooCommerce-specific files
+    require_once (EIFUD_GLOBAl_DIR . 'includes/product-meta-fields.php');
+    require_once (EIFUD_GLOBAl_DIR . 'includes/document-taxonomy.php');
+    require_once (EIFUD_GLOBAl_DIR . 'includes/frontend-integration.php');
+    require_once (EIFUD_GLOBAl_DIR . 'includes/admin-settings.php');
+}
+add_action('plugins_loaded', 'MGBdev\\WC_Eifu_Docs\\eifu_test_maybe_load_woocommerce_features', 20);
