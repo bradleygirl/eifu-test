@@ -144,18 +144,26 @@ add_action('add_meta_boxes', 'add_document_meta_boxes');
  */
 function render_document_details_meta_box($post) {
 	wp_nonce_field('save_document_details', 'document_details_nonce');
-	
-	$file_url = get_post_meta($post->ID, '_document_file_url', true);
+	$base_url = get_post_meta($post->ID, '_document_base_url', true);
 	$file_size = get_post_meta($post->ID, '_document_file_size', true);
 	$download_count = get_post_meta($post->ID, '_document_download_count', true);
-	
+	$checked_langs = get_post_meta($post->ID, '_document_languages', true);
+	if (!is_array($checked_langs)) $checked_langs = array();
+	$langs = function_exists('MGBdev\\WC_Eifu_Docs\\eifu_get_supported_languages') ? \MGBdev\WC_Eifu_Docs\eifu_get_supported_languages() : array('ENG'=>'English');
 	echo '<table class="form-table">';
-	echo '<tr><th><label for="document_file_url">' . __('Document File URL', 'eifu-test') . '</label></th>';
-	echo '<td><input type="url" id="document_file_url" name="document_file_url" value="' . esc_url($file_url) . '" class="regular-text" /></td></tr>';
-	
+	echo '<tr><th><label for="document_base_url">' . __('Document Base URL', 'eifu-test') . '</label></th>';
+	echo '<td><input type="url" id="document_base_url" name="document_base_url" value="' . esc_url($base_url) . '" class="regular-text" placeholder="https://example.com/path/to/file" /></td></tr>';
+	echo '<tr><th>' . __('Available Languages', 'eifu-test') . '</th>';
+	echo '<td>';
+	foreach ($langs as $code => $label) {
+		$checked = in_array($code, $checked_langs) ? 'checked' : '';
+		echo '<label style="display:inline-block;margin-right:12px;">';
+		echo '<input type="checkbox" name="document_languages[]" value="' . esc_attr($code) . '" ' . $checked . '> ' . esc_html($label) . ' (' . esc_html($code) . ')';
+		echo '</label>';
+	}
+	echo '</td></tr>';
 	echo '<tr><th><label for="document_file_size">' . __('File Size', 'eifu-test') . '</label></th>';
 	echo '<td><input type="text" id="document_file_size" name="document_file_size" value="' . esc_attr($file_size) . '" class="regular-text" /></td></tr>';
-	
 	echo '<tr><th>' . __('Download Count', 'eifu-test') . '</th>';
 	echo '<td>' . intval($download_count) . '</td></tr>';
 	echo '</table>';
@@ -174,7 +182,9 @@ function save_document_details_meta($post_id) {
 		return;
 	}
 	
-	update_post_meta($post_id, '_document_file_url', sanitize_url($_POST['document_file_url']));
+	update_post_meta($post_id, '_document_base_url', sanitize_url($_POST['document_base_url']));
+	$langs = isset($_POST['document_languages']) ? array_map('sanitize_text_field', (array)$_POST['document_languages']) : array();
+	update_post_meta($post_id, '_document_languages', $langs);
 	update_post_meta($post_id, '_document_file_size', sanitize_text_field($_POST['document_file_size']));
 }
 add_action('save_post', 'save_document_details_meta');

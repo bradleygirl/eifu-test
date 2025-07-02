@@ -5,6 +5,8 @@
 
 namespace MGBdev\WC_Eifu_Docs;
 
+require_once dirname(__FILE__, 2) . '/includes/admin-settings.php';
+
 /**
  * Add documents tab to product tabs
  */
@@ -38,11 +40,14 @@ function render_documents_tab_content() {
     echo '<div class="product-documents">';
     echo '<h3>' . __('Product Documents', 'eifu-test') . '</h3>';
     
+    $langs = function_exists('MGBdev\\WC_Eifu_Docs\\eifu_get_supported_languages') ? \MGBdev\WC_Eifu_Docs\eifu_get_supported_languages() : array('ENG'=>'English');
     foreach ($documents as $doc_id) {
         $document = get_post($doc_id);
         if (!$document) continue;
         
-        $file_url = get_post_meta($doc_id, '_document_file_url', true);
+        $base_url = get_post_meta($doc_id, '_document_base_url', true);
+        $checked_langs = get_post_meta($doc_id, '_document_languages', true);
+        if (!is_array($checked_langs)) $checked_langs = array();
         $file_size = get_post_meta($doc_id, '_document_file_size', true);
         
         echo '<div class="document-item">';
@@ -50,12 +55,21 @@ function render_documents_tab_content() {
         if ($document->post_excerpt) {
             echo '<p>' . esc_html($document->post_excerpt) . '</p>';
         }
-        if ($file_url) {
-            echo '<p><a href="' . esc_url($file_url) . '" class="button" target="_blank">' . __('Download', 'eifu-test');
-            if ($file_size) {
-                echo ' (' . esc_html($file_size) . ')';
+        if ($base_url && $checked_langs) {
+            echo '<ul class="document-download-menu">';
+            foreach ($checked_langs as $code) {
+                $label = isset($langs[$code]) ? $langs[$code] : $code;
+                $download_url = trailingslashit($base_url);
+                // Remove trailing slash for file name
+                $download_url = rtrim($download_url, '/');
+                $download_url .= '_' . $code . '.pdf';
+                echo '<li><a href="' . esc_url($download_url) . '" class="button" target="_blank">' . esc_html($label) . ' (' . esc_html($code) . ')';
+                if ($file_size) {
+                    echo ' - ' . esc_html($file_size);
+                }
+                echo '</a></li>';
             }
-            echo '</a></p>';
+            echo '</ul>';
         }
         echo '</div>';
     }
