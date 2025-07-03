@@ -60,3 +60,14 @@ function eifu_test_maybe_load_woocommerce_features() {
     require_once (EIFUD_GLOBAl_DIR . 'includes/admin-settings.php');
 }
 add_action('plugins_loaded', 'MGBdev\\WC_Eifu_Docs\\eifu_test_maybe_load_woocommerce_features', 20);
+
+// Force use of plugin archive template for IFU Documents
+add_filter('template_include', function($template) {
+    if (is_post_type_archive('eifudoc')) {
+        $plugin_template = EIFUD_GLOBAl_DIR . 'templates/archive-eifudoc.php';
+        if (file_exists($plugin_template)) {
+            return $plugin_template;
+        }
+    }
+    return $template;
+});
